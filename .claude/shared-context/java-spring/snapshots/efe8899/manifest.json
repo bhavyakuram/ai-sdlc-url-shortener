@@ -1,0 +1,7 @@
+{
+  "snapshot_sha": "efe8899",
+  "stack": "java-spring",
+  "cache_status": "miss-regenerated",
+  "prior_snapshot": "greenfield-baseline",
+  "reason": "Code changed since prior snapshot (real service generated in STEP-4 of url-shortener-core)."
+}

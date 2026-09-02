@@ -13,12 +13,20 @@ for the full architecture, orchestration model, and design decisions.
 
 ## Status
 
-**Scaffolding phase.** The orchestration framework's structure (agents,
-skills, rules, roles, modes, stacks, config) is in place under
-`.claude/`. The framework has not yet been run end-to-end to generate
-the actual URL-shortener product code — that's the next step, and it
-happens *through* the framework (`/run-sdlc`), not by hand-writing the
-service.
+**All 3 required scenarios complete.** The framework structure is in
+place under `.claude/`, and has been run end-to-end three times:
+
+| Run | Feature-id | Role | Result |
+|---|---|---|---|
+| Greenfield | `url-shortener-core` | `greenfield` | COMPLETE, score 0.95 |
+| Brownfield | `url-shortener-bulk-shorten` | `services-mod` | COMPLETE, score 0.95 |
+| Ambiguous | `url-shortener-analytics-reliability` | `services-doc` → `services-mod` (Gate 1 EXPAND_LANES) | COMPLETE, score 0.95 |
+
+See [`docs/scenarios/`](docs/scenarios/) for the narrative of each,
+and `.claude/output/{feature-id}/_run-log.md` / `_decisions.yaml` for
+the verbatim phase-by-phase trace and every gate decision. The
+generated service is at [`service-java-spring/`](service-java-spring/)
+— 20 real JUnit tests, all passing (`mvn -o test`).
 
 ## Repository Layout
 
@@ -65,7 +73,15 @@ docs/
 
 ## The Three Required Scenarios
 
-See [`docs/scenarios/`](docs/scenarios/) — greenfield (build from
-scratch), brownfield (enhance the already-built service), and
-ambiguous (a deliberately underspecified requirement run through the
-same pipeline to demonstrate its own ambiguity-handling).
+- [Greenfield](docs/scenarios/greenfield.md) — built the service from scratch.
+- [Brownfield](docs/scenarios/brownfield.md) — added a bulk-shorten endpoint to the already-built service; `generator` caught and fixed its own layer-boundary mistake mid-implementation.
+- [Ambiguous](docs/scenarios/ambiguous.md) — a request filed as audit-only whose own language implied a code change; `posture-feasibility` caught the mismatch, the operator decided at an extended Gate 1.
+
+## Known Limitations
+
+See [`docs/testing-and-limitations.md`](docs/testing-and-limitations.md)
+— most notably: no measured line-coverage percentage (JaCoCo isn't
+wired in), no static-analysis tool beyond grep-based checks, and
+`_token-telemetry.json`/`_reliability-metrics.json` weren't populated
+with real numbers since these runs were driven manually rather than
+through Claude Code's own `Agent`-tool dispatch.

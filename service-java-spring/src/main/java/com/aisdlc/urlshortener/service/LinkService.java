@@ -7,6 +7,8 @@ import com.aisdlc.urlshortener.data.ShortLinkRepository;
 import com.aisdlc.urlshortener.service.exception.AliasTakenException;
 import com.aisdlc.urlshortener.service.exception.LinkExpiredException;
 import com.aisdlc.urlshortener.service.exception.LinkNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,8 @@ import java.util.List;
  */
 @Service
 public class LinkService {
+
+    private static final Logger log = LoggerFactory.getLogger(LinkService.class);
 
     private final ShortLinkRepository shortLinkRepository;
     private final ClickEventRepository clickEventRepository;
@@ -78,7 +82,13 @@ public class LinkService {
     /**
      * Resolves a short code to its target and records a click.
      * AC-5 (success) / AC-6 (LinkNotFoundException) / AC-7
-     * (LinkExpiredException).
+     * (LinkExpiredException) / AC-15 (a click-write failure must not
+     * fail the redirect) / AC-16 (normal path unchanged).
+     *
+     * <p>Only the click-write step is isolated in its own try/catch —
+     * see step3/technical-design.md (url-shortener-analytics-reliability)
+     * for why the whole method isn't wrapped: LinkNotFoundException /
+     * LinkExpiredException above must still propagate normally.
      */
     @Transactional
     public String resolveAndRecordClick(String code, String referrer) {
@@ -90,7 +100,15 @@ public class LinkService {
             throw new LinkExpiredException(code);
         }
 
-        clickEventRepository.save(new ClickEventEntity(link.getId(), now, referrer));
+        try {
+            clickEventRepository.save(new ClickEventEntity(link.getId(), now, referrer));
+        } catch (RuntimeException e) {
+            // AC-15: an analytics-write failure must never fail the
+            // redirect itself — logged with enough context to diagnose
+            // without re-running the request (rules/coding-standards.md).
+            log.warn("Failed to record click for short code '{}' — redirect will still proceed", code, e);
+        }
+
         return link.getTargetUrl();
     }
 

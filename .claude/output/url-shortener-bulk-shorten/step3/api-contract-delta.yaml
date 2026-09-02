@@ -1,0 +1,45 @@
+# Contract-delta amendment to step3/api-contract.yaml from url-shortener-core
+# (sanctioned exception to Write-Once Immutability — rules/architecture.md)
+paths:
+  /links/bulk:
+    post:
+      summary: Create multiple short links in one call (1-20 items)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items]
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 20
+                  items: { $ref: "#/components/schemas/CreateLinkRequestItem" }
+      responses:
+        "200":
+          description: "Always 200 once the request itself is valid — per-item outcomes are in the body"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BulkCreateResponse" }
+        "400": { description: "items is empty or has more than 20 entries (whole-request rejection)" }
+components:
+  schemas:
+    CreateLinkRequestItem:
+      type: object
+      properties:
+        targetUrl: { type: string, format: uri }
+        alias: { type: string }
+        expiresInDays: { type: integer }
+    BulkCreateResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              status: { type: string, enum: [created, error] }
+              link: { $ref: "#/components/schemas/LinkResponse" }
+              error: { $ref: "#/components/schemas/ErrorResponse" }

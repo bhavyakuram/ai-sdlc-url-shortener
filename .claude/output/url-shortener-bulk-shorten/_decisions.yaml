@@ -1,0 +1,18 @@
+feature_id: url-shortener-bulk-shorten
+decisions:
+  - gate: 1
+    position: "After STEP-1"
+    decision: GO
+    notes: "Ratified without conditions. 20-item batch cap and per-item partial-failure model accepted as proposed."
+  - gate: 2
+    position: "After STEP-2"
+    decision: APPROVED
+    notes: "Spec frozen: FS-5, AC-10..AC-14."
+  - gate: 3
+    position: "After STEP-3"
+    decision: APPROVED
+    notes: "Design frozen: manual per-item validation, no cascading @Valid on batch items."
+  - gate: 6
+    position: "Gate 3 extension"
+    decision: NO_EXCLUSIONS
+    notes: "No framework/library vetoes requested."

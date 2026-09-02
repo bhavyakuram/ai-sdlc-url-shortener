@@ -1,0 +1,24 @@
+feature_id: url-shortener-analytics-reliability
+decisions:
+  - gate: 1
+    position: "After STEP-1 (extended with role-confirmation options — posture-feasibility surfaced a MISMATCH)"
+    decision: EXPAND_LANES
+    notes: >
+      Widened services-doc -> services-mod, specifically and only to fix
+      R1 (click-write failure shouldn't fail the redirect). No bug found
+      matching the original "quietly losing data" concern.
+      Reconciliation with rules/mode-policy.md "axes frozen for the run's
+      duration": this expansion happens at Gate 1, before STEP-2/3/4 have
+      produced anything — read as "role is finalized once past Gate 1,"
+      not "role can never be corrected in light of Gate-1-time evidence."
+      A role change AFTER STEP-4 generation had started would not be
+      covered by this same reasoning and would need a different
+      mechanism (rollback + fresh run), not a Gate-1-style expansion.
+  - gate: 2
+    position: "After STEP-2"
+    decision: APPROVED
+    notes: "FS-6 frozen: undercounting accepted as trade-off, not a retry."
+  - gate: 3
+    position: "After STEP-3"
+    decision: APPROVED
+    notes: "Minimal try/catch approach approved over the considered-and-rejected @Async alternative."

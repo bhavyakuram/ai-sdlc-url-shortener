@@ -1,0 +1,8 @@
+{
+  "snapshot_sha": "0fa28414f8bd",
+  "stack": "java-spring",
+  "cache_status": "miss-regenerated",
+  "prior_snapshot": "efe8899",
+  "key_method": "md5 of concatenated tracked-and-untracked src/ file bytes — a real content hash this run, upgrading the prior two snapshots' git-HEAD-SHA stand-in (see rules/shared-context.md: content hash, not just a git SHA, so uncommitted changes still invalidate correctly). This snapshot correctly reflects the bulk-shorten changes from url-shortener-bulk-shorten even though they hadn't been committed yet when this run started.",
+  "reason": "Code changed since efe8899 (bulk-shorten additions)."
+}
