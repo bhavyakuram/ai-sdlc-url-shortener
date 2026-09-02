@@ -1,0 +1,8 @@
+# Cross-run learning data. Empty until the first runs complete.
+# Schema per matrix row (stack x role):
+# matrix_rows:
+#   java-spring/fullstack:
+#     gate_decisions: {gate_4: [], gate_5: []}   # last N decisions, for online-learning auto-approval eligibility
+#     pass_history: []                             # for adaptive-gate retry-budget calibration
+#     reliability: {success_rate: null, mttr_seconds: null}
+matrix_rows: {}

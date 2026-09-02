@@ -1,0 +1,19 @@
+---
+skill_id: {{id}}
+implements_agent: agents/{{phase_dir}}/{{id}}.md
+model_tier: {{model_tier}}
+---
+
+# Skill: {{title}}
+
+## Implementation Logic
+{{step-by-step algorithm}}
+
+## Tool Usage
+{{tools this skill invokes}}
+
+## Recipe Calls
+{{stack recipe ids invoked via stacks/{active-stack}/stack-skills.yaml}}
+
+## Report Block
+{{what this skill writes, and where}}

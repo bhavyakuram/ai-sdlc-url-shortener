@@ -1,0 +1,9 @@
+# Active MCP integration for this project.
+enabled: true
+provider: local
+server: tools/code-graph-mcp/server.py
+tiers:
+  tier1_discovery: [index_health, list_modules, find_symbol, find_references, list_external_deps, layer_map]
+  tier2_summarization: [module_summary, file_skeleton, semantic_search]
+  tier3_always_on_graph: [find_callers, find_callees, cross_repo_consumers, contract_field_impact, layer_boundary_check, circular_deps]
+fallback: text-grep

@@ -1,0 +1,10 @@
+{
+  "families": {
+    "jira": {"ttl_hours": 24, "scope": "feature"},
+    "figma": {"ttl_days": 7, "scope": "feature"},
+    "playwright": {"ttl": "never", "scope": "none"},
+    "code-graph": {"ttl": "provider-defined", "scope": "stack"}
+  },
+  "never_cache_tools": ["mcp_playwright_navigate", "mcp_playwright_click"],
+  "scrub_fields": ["authorization", "token", "api_key", "secret"]
+}

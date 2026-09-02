@@ -1,0 +1,5 @@
+# Scaffolded, inactive by default. Enable for STEP-5 runtime web testing
+# of the API's OpenAPI-driven contract tests if desired.
+enabled: false
+cache: never
+family: playwright

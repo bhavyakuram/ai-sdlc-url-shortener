@@ -1,0 +1,15 @@
+# Stack-specific recipe registry for java-spring.
+# Agents/skills never embed these commands directly — they look up a
+# recipe by id (rules/architecture.md, Technology Agnosticism).
+recipes:
+  build: "mvn -q -DskipTests compile"
+  test: "mvn -q test"
+  test_coverage: "mvn -q jacoco:report"
+  lint: "mvn -q spotbugs:check checkstyle:check"
+  run: "mvn -q spring-boot:run"
+  dependency_audit: "mvn -q org.owasp:dependency-check-maven:check"
+
+agents_registry:
+  # Which of this project's agents apply to this stack (all of them —
+  # java-spring has no exclusions for the URL shortener feature set).
+  excluded_agents: []

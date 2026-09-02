@@ -1,0 +1,8 @@
+{
+  "ACTIVE_STACK": null,
+  "ACTIVE_ROLE": "fullstack",
+  "ACTIVE_MODE": "hybrid",
+  "ACTIVE_PLATFORM": "none",
+  "SDLC_MCP_MODE": "hooks",
+  "notes": "ACTIVE_STACK is set per-run by sdlc-launcher from the /run-sdlc <stack> argument; it is not a fixed project default because this project supports both java-spring and python-fastapi."
+}

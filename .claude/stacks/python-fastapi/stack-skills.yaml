@@ -1,0 +1,11 @@
+# Stack-specific recipe registry for python-fastapi.
+recipes:
+  build: "python -m py_compile app && mypy --strict app"
+  test: "pytest -q"
+  test_coverage: "pytest -q --cov=app --cov-report=term-missing"
+  lint: "ruff check app && ruff format --check app"
+  run: "uvicorn app.main:app --reload"
+  dependency_audit: "pip-audit && bandit -r app"
+
+agents_registry:
+  excluded_agents: []

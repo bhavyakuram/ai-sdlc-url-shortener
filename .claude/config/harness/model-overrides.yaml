@@ -1,0 +1,16 @@
+# Model routing profile for this project.
+active_profile: sonnet-haiku-baseline
+profiles:
+  sonnet-haiku-baseline:
+    sonnet_agents: "Claude Sonnet (current)"
+    haiku_agents: "Claude Haiku (current)"
+    use_case: "Production baseline for this assignment"
+  opus-critical-only:
+    sonnet_agents: "Sonnet for most agents"
+    opus_agents: "Opus for technical-design (STEP-3) and generator on complex refactors"
+    haiku_agents: "Haiku for path resolution, format conversion, severity classification"
+    use_case: "Targeted quality boost for the trickiest step"
+sub_task_routing:
+  - {task: "path resolution, format conversion, severity classification", model: haiku}
+  - {task: "architecture decisions, AC authoring, code generation", model: sonnet}
+  - {task: "complex refactors, technical-design", model: opus}
