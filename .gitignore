@@ -1,14 +1,12 @@
 \# Secrets / local overrides
 .claude/settings.local.json
 
-\# Generated per-run artifacts (kept out of version control; each run
-\# is reproducible from inputs/ + the framework, per rules/architecture.md
-\# Audit Everything — the _run-log.md + _decisions.yaml pair reproduces it)
-.claude/output/*/step*/
-.claude/output/*/_run-log.md
-.claude/output/*/_token-telemetry.json
-.claude/output/*/_reliability-metrics.json
-.claude/shared-context/*/snapshots/
+\# Note: .claude/output/ and .claude/shared-context/ are intentionally
+\# NOT ignored — each run's artifacts are the evidence for this
+\# project's required scenario deliverables (docs/scenarios/), and
+\# rules/architecture.md Audit Everything treats the _run-log.md +
+\# _decisions.yaml pair as the reproducibility record, not a reason to
+\# discard the outputs they describe.
 
 \# Language build artifacts
 target/

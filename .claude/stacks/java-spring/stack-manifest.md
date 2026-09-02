@@ -13,9 +13,14 @@ the prototype default, swappable to Postgres via `db-harness/` per
 `rules/data-layer.md`.
 
 ## Versions
-- Java 21 (LTS)
-- Spring Boot 3.3.x
-- Maven 3.9.x
+- Java 19 — **corrected at STEP-4 build-verdict time** from the
+  originally-declared Java 21: this dev machine only has an
+  IntelliJ-managed JDK 19 (`~/.jdks/openjdk-19`) installed, no JDK 21.
+  Recorded here rather than silently building against a version that
+  doesn't match the manifest — see `_run-log.md` STEP-4 entry.
+- Spring Boot 3.2.x (3.3.x requires Java 21+; downgraded to match the
+  available JDK — see same note above)
+- Maven 3.8.x (IntelliJ-bundled: `plugins/maven/lib/maven3`)
 - JUnit 5 + Mockito for `test:junit`
 
 ## Layers

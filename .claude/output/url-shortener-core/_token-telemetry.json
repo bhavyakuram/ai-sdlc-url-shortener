@@ -1,0 +1,8 @@
+{
+  "feature_id": "url-shortener-core",
+  "stack": "java-spring",
+  "model_profile": "sonnet-haiku-baseline",
+  "predicted_cost_units": null,
+  "spend_by_phase": {},
+  "note": "Not instrumented in this manual dry run (no per-agent-dispatch cost metering wired up — a real /run-sdlc execution through Claude Code's own Agent tool would populate this from actual token usage per subagent dispatch)."
+}

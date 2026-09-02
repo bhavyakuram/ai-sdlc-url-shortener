@@ -1,0 +1,67 @@
+openapi: 3.1.0
+info:
+  title: URL Shortener API
+  version: 1.0.0
+paths:
+  /links:
+    post:
+      summary: Create a short link
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetUrl]
+              properties:
+                targetUrl: { type: string, format: uri }
+                alias: { type: string, pattern: "^[a-zA-Z0-9_-]{3,32}$" }
+                expiresInDays: { type: integer, minimum: 1 }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LinkResponse" }
+        "400": { description: "Invalid targetUrl" }
+        "409": { description: "Alias already in use (code=ALIAS_TAKEN)" }
+  /{code}:
+    get:
+      summary: Redirect to the target URL and record a click
+      parameters:
+        - { name: code, in: path, required: true, schema: { type: string } }
+      responses:
+        "302": { description: "Redirect to targetUrl" }
+        "404": { description: "Code never existed" }
+        "410": { description: "Code existed, now expired" }
+  /links/{code}/analytics:
+    get:
+      summary: Click analytics for a short link
+      parameters:
+        - { name: code, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AnalyticsResponse" }
+        "404": { description: "Code never existed" }
+components:
+  schemas:
+    LinkResponse:
+      type: object
+      properties:
+        code: { type: string }
+        targetUrl: { type: string, format: uri }
+        expiresAt: { type: string, format: date-time }
+    AnalyticsResponse:
+      type: object
+      properties:
+        code: { type: string }
+        clickCount: { type: integer }
+        events:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp: { type: string, format: date-time }
+              referrer: { type: string, nullable: true }

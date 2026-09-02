@@ -1,0 +1,7 @@
+{
+  "snapshot_sha": "greenfield-baseline",
+  "stack": "java-spring",
+  "cache_status": "cold-bootstrap",
+  "produced_by": "shared-context-bootstrap",
+  "note": "First run on this stack; no prior snapshot existed to reuse."
+}

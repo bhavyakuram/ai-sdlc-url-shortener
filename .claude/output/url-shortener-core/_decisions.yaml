@@ -1,0 +1,28 @@
+# Structured HITL decision capture (rules/architecture.md Audit Everything,
+# Key Design Principle #8 — a re-run with this same file reproduces the run's gate outcomes).
+feature_id: url-shortener-core
+decisions:
+  - gate: 0
+    position: "After concept + market-research"
+    decision: APPROVED
+    notes: "3 flagged ambiguities' proposed resolutions accepted as-is: 90-day default TTL (overridable), click-event-log analytics, 409 on alias collision."
+  - gate: 0.5
+    position: "After ux-prototype"
+    decision: APPROVED
+    notes: "4-screen illustrative mockup accepted; API-only scope framing (not a STEP-4 deliverable) explicitly acknowledged."
+  - gate: 1
+    position: "After STEP-1"
+    decision: GO
+    notes: "Ratified without conditions. R3 (open-redirect) and R4 (no rate limiting) accepted as documented scope gaps, not blockers."
+  - gate: 2
+    position: "After STEP-2"
+    decision: APPROVED
+    notes: "Spec frozen including the 410-vs-404 refinement beyond idea.md's literal ask."
+  - gate: 3
+    position: "After STEP-3"
+    decision: APPROVED
+    notes: "Design frozen: DB-unique-constraint concurrency strategy, read-time expiry check, no background sweep job."
+  - gate: 6
+    position: "Gate 3 extension"
+    decision: NO_EXCLUSIONS
+    notes: "No framework/library vetoes requested."
