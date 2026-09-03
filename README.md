@@ -8,12 +8,17 @@ human approval gates, bounded retries/rollback/safe-stop, and
 audit-grade telemetry. Built for the Agentic-Proficient Software
 Engineer interview assignment.
 
-See [`docs/architecture-overview.md`](docs/architecture-overview.md)
-and [`docs/aisdlc-flow-and-compliance.md`](docs/aisdlc-flow-and-compliance.md)
-(full flow diagram + a requirement-by-requirement compliance mapping
-against the assignment) for the architecture and orchestration model.
-For how to actually run it, see
-[`docs/running-the-framework.md`](docs/running-the-framework.md).
+## Documentation
+
+| Document | What's in it |
+|---|---|
+| 👉 [`docs/running-the-framework.md`](docs/running-the-framework.md) | **Start here to run it.** Entry-point syntax, every flag, all role-based ways to invoke it with real examples, mode comparison, toolchain setup. |
+| [`docs/architecture-overview.md`](docs/architecture-overview.md) | Static architecture: components, the 4 configuration axes, agent/skill/rule separation, key design decisions, known limitations. |
+| [`docs/aisdlc-flow-and-compliance.md`](docs/aisdlc-flow-and-compliance.md) | Full end-to-end flow (plain-text diagram + Mermaid), and a requirement-by-requirement compliance mapping against the assignment. |
+| [`docs/testing-and-limitations.md`](docs/testing-and-limitations.md) | Testing approach, coverage, and every known limitation/trade-off, named plainly. |
+| [`docs/scenarios/greenfield.md`](docs/scenarios/greenfield.md) | Walkthrough: `url-shortener-core` built from scratch (STEP-0 → COMPLETE). |
+| [`docs/scenarios/brownfield.md`](docs/scenarios/brownfield.md) | Walkthrough: `url-shortener-bulk-shorten` added to the already-built service. |
+| [`docs/scenarios/ambiguous.md`](docs/scenarios/ambiguous.md) | Walkthrough: `url-shortener-analytics-reliability`, filed audit-only, expanded at Gate 1. |
 
 ## Status
 
@@ -43,7 +48,7 @@ re-running verification rather than trusting one green result.
 ├── CLAUDE.md                master orchestration rules
 ├── agents/ + skills/        38 agent/skill pairs across 9 phases (see docs)
 ├── rules/                   20 universal enforcement rules
-├── roles/                   5 role manifests
+├── roles/                   4 role manifests
 ├── modes/                   3 execution-posture manifests
 ├── stacks/                  java-spring, python-fastapi (the techStack axis)
 ├── platforms/ + config/ + reference/ + hooks/
