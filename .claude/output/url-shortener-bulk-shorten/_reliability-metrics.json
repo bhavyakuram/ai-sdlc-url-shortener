@@ -1,0 +1,20 @@
+{
+  "feature_id": "url-shortener-bulk-shorten",
+  "mode": "agentic",
+  "trigger": "real /sdlc-launcher skill invocation",
+  "phase_events": [
+    {"phase": "PRE-WORK", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false},
+    {"phase": "STEP-1", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false},
+    {"phase": "STEP-2", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false},
+    {"phase": "STEP-3", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false},
+    {"phase": "STEP-4", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false, "note": "generator dispatch interrupted by a session rate limit mid-task; resumed via SendMessage, not a retry (same task, no failure)"},
+    {"phase": "STEP-5", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false},
+    {"phase": "STEP-6", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false}
+  ],
+  "success_rate": 1.0,
+  "mttr_seconds": null,
+  "end_to_end_latency_seconds": null,
+  "retry_frequency": 0.0,
+  "rollback_frequency": 0.0,
+  "note": "Zero real retries this run — build/tests passed clean first time, unlike url-shortener-core's one real BLOCKER. The STEP-4 rate-limit interruption was an infrastructure event (session quota), not a phase failure, so it is not counted as a retry."
+}

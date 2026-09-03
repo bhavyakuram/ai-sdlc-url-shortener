@@ -1,9 +1,8 @@
 ---
 mode_id: hybrid
-default: true
 ---
 
-# Mode: hybrid (default)
+# Mode: hybrid
 
 **CLAUDE.md routing + 6 bounded decision surfaces.** Balanced autonomy
 with safety.
@@ -24,5 +23,7 @@ for consumer-only roles with `api_contract_integration` inactive).
 Gate 6 always active, never auto.
 
 ## When To Use
-The default for this project — enough autonomy to move at a reasonable
-pace without giving up the safety of gates at every phase boundary.
+A safer, simpler fallback when agentic mode's added surfaces (conductor
+sequencing, parallel exploration, cost capping) aren't wanted — e.g. a
+first run against a brand-new stack. Not the default for this project;
+see `modes/agentic/mode-manifest.md`.

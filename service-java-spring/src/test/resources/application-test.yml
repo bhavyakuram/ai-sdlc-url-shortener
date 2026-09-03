@@ -1,0 +1,29 @@
+# Test profile: in-memory H2 for fast, isolated test runs. The production requirement
+# (application.yml, jdbc:h2:file:...) is exercised deliberately by
+# H2FileModeDurabilityTest instead -- see that test's javadoc for why file-mode itself
+# does not need to be the default for the whole suite (risk-register.md R-1 mitigation:
+# "add an integration test that restarts the datasource ... and asserts a previously
+# created link still resolves", not "run every test against the file").
+spring:
+  datasource:
+    url: jdbc:h2:mem:urlshortener-test;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  sql:
+    init:
+      mode: always
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+  h2:
+    console:
+      enabled: false
+
+urlshortener:
+  geoip:
+    # Deliberately left pointing at a nonexistent file -- this build environment has no
+    # real GeoLite2-Country.mmdb (R-7), so tests exercise the real fail-soft path rather
+    # than a mocked one wherever they touch geo lookup (see RedirectTest AC20).
+    database-path: ./geoip/GeoLite2-Country.mmdb

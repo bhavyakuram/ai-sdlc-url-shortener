@@ -1,17 +1,17 @@
 feature_id: url-shortener-bulk-shorten
 stack: java-spring
 role: services-mod
-mode: hybrid
+mode: agentic
 platform: none
 posture: mod
 layers_in_scope: [api, service]
 contract_posture: producer
-retry_budget: 5
+retry_budget: 5   # adaptive-gate: java-spring/services-mod has no history yet (different matrix row than greenfield)
 gate_thresholds:
-  gate_0: not_applicable   # role != greenfield, no STEP-0
-  gate_1: active
-  gate_2: active
-  gate_3: active
-  gate_6: active
-policies:
-  code_reuse: {active: true}   # active_postures includes mod, per stack-manifest quality_policies
+  gate_1: active_never_auto
+  gate_2: active_never_auto
+  gate_3: active_never_auto
+  gate_4: auto_eligible_after_10_consistent
+  gate_5: auto_eligible_after_10_consistent
+  gate_6: active_never_auto
+cost_cap_multiplier: 2.0

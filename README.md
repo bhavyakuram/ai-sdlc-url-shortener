@@ -9,24 +9,32 @@ audit-grade telemetry. Built for the Agentic-Proficient Software
 Engineer interview assignment.
 
 See [`docs/architecture-overview.md`](docs/architecture-overview.md)
-for the full architecture, orchestration model, and design decisions.
+and [`docs/aisdlc-flow-and-compliance.md`](docs/aisdlc-flow-and-compliance.md)
+(full flow diagram + a requirement-by-requirement compliance mapping
+against the assignment) for the architecture and orchestration model.
+For how to actually run it, see
+[`docs/running-the-framework.md`](docs/running-the-framework.md).
 
 ## Status
 
-**All 3 required scenarios complete.** The framework structure is in
-place under `.claude/`, and has been run end-to-end three times:
+**All 3 required scenarios COMPLETE, run under `agentic` mode** (the
+project's default — see `.claude/modes/agentic/mode-manifest.md`),
+each triggered directly via the real `/sdlc-launcher` Claude Code
+skill — not a simulated walkthrough.
 
 | Run | Feature-id | Role | Result |
 |---|---|---|---|
-| Greenfield | `url-shortener-core` | `greenfield` | COMPLETE, score 0.95 |
-| Brownfield | `url-shortener-bulk-shorten` | `services-mod` | COMPLETE, score 0.95 |
-| Ambiguous | `url-shortener-analytics-reliability` | `services-doc` → `services-mod` (Gate 1 EXPAND_LANES) | COMPLETE, score 0.95 |
+| Greenfield | `url-shortener-core` | `greenfield` | COMPLETE, score 0.985 |
+| Brownfield | `url-shortener-bulk-shorten` | `services-mod` | COMPLETE, score 0.985 |
+| Ambiguous | `url-shortener-analytics-reliability` | `services-doc` → `services-mod` (Gate 1 EXPAND_LANES) | COMPLETE, score 0.985 |
 
-See [`docs/scenarios/`](docs/scenarios/) for the narrative of each,
-and `.claude/output/{feature-id}/_run-log.md` / `_decisions.yaml` for
-the verbatim phase-by-phase trace and every gate decision. The
-generated service is at [`service-java-spring/`](service-java-spring/)
-— 20 real JUnit tests, all passing (`mvn -o test`).
+53 real JUnit tests, 91.6% coverage, zero regressions across all three
+runs. See [`docs/scenarios/`](docs/scenarios/) for what actually
+happened in each — including a genuine 3-way parallel design
+exploration, two real build failures with real bounded retries, a
+subagent that got interrupted by a session rate limit and was resumed
+(not restarted) mid-task, and a real test-isolation bug found by
+re-running verification rather than trusting one green result.
 
 ## Repository Layout
 
@@ -44,6 +52,8 @@ generated service is at [`service-java-spring/`](service-java-spring/)
 
 docs/
 ├── architecture-overview.md      (deliverable)
+├── aisdlc-flow-and-compliance.md (deliverable: full flow diagram + requirements compliance)
+├── running-the-framework.md      (deliverable: complete usage/options guide)
 ├── testing-and-limitations.md    (deliverable)
 └── scenarios/                    (deliverable: greenfield / brownfield / ambiguous walk-throughs)
 
@@ -55,33 +65,33 @@ docs/
 ## Setup
 
 1. Requires Claude Code CLI with this repo open as the project directory.
-2. Pick a stack: `java-spring` (needs JDK 21 + Maven) or
-   `python-fastapi` (needs Python 3.12 + pip).
-3. Run the framework:
+2. Stack: `java-spring` (needs a JDK + Maven — this project's own
+   builds used JDK 19; see `docs/running-the-framework.md` §10 if you
+   only have an IDE-managed toolchain, not one on `PATH`).
+3. Run the framework (mode defaults to `agentic`):
    ```bash
-   /run-sdlc java-spring url-shortener-core fullstack --mode=hybrid
-   ```
-   or
-   ```bash
-   /run-sdlc python-fastapi url-shortener-core fullstack --mode=hybrid
+   /sdlc-launcher java-spring url-shortener-core greenfield --mode=agentic
    ```
 4. Respond to the HITL gate prompts as they appear (concept approval,
    GO/NO-GO, spec freeze, design freeze, release waiver).
 5. On `COMPLETE`, the generated service lives under
-   `service-{stack}/`, with its own build/run instructions written by
-   `generator` into that folder's own README.
+   `service-java-spring/` (plain Maven project — `mvn test`,
+   `mvn spring-boot:run`).
+
+Full options (roles, modes, re-running, inspecting a run, toolchain
+troubleshooting): [`docs/running-the-framework.md`](docs/running-the-framework.md).
 
 ## The Three Required Scenarios
 
-- [Greenfield](docs/scenarios/greenfield.md) — built the service from scratch.
-- [Brownfield](docs/scenarios/brownfield.md) — added a bulk-shorten endpoint to the already-built service; `generator` caught and fixed its own layer-boundary mistake mid-implementation.
-- [Ambiguous](docs/scenarios/ambiguous.md) — a request filed as audit-only whose own language implied a code change; `posture-feasibility` caught the mismatch, the operator decided at an extended Gate 1.
+- [Greenfield](docs/scenarios/greenfield.md) — built from scratch; a genuine 3-way parallel design exploration for short-code generation, one real BLOCKER + retry, and a real test-isolation bug found by re-verifying.
+- [Brownfield](docs/scenarios/brownfield.md) — added a batch-create endpoint to the real, already-built service; two real Gate-1 findings (rate-limit amplification, a Spring self-invocation bug) both closed properly; a subagent interrupted by a session rate limit was resumed, not restarted.
+- [Ambiguous](docs/scenarios/ambiguous.md) — a request filed as audit-only whose own language implied a fix; `posture-feasibility` caught the mismatch, and the investigation found a more precise defect than the original fear.
 
 ## Known Limitations
 
 See [`docs/testing-and-limitations.md`](docs/testing-and-limitations.md)
-— most notably: no measured line-coverage percentage (JaCoCo isn't
-wired in), no static-analysis tool beyond grep-based checks, and
-`_token-telemetry.json`/`_reliability-metrics.json` weren't populated
-with real numbers since these runs were driven manually rather than
-through Claude Code's own `Agent`-tool dispatch.
+— most notably: no static-analysis tool beyond grep-based checks,
+`cost-router`/`adaptive-gate`/`online-learning` remain mostly
+theoretical (no real token metering, and nowhere near the 10-run
+history `online-learning` needs), and `deterministic`/`hybrid` modes
+were superseded by the project's switch to `agentic` as default.

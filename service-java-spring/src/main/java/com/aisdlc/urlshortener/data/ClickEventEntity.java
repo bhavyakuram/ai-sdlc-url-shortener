@@ -8,12 +8,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.Objects;
 
 /**
- * A single recorded click on a {@link ShortLinkEntity}. {@code referrer}
- * is nullable — browsers do not reliably send a Referer header
- * (see step1/risk-register.md R5), and the schema tolerates that
- * rather than treating it as an error.
+ * A single recorded click on a short link. Maps 1:1 to the {@code click_event} table
+ * defined in {@code state-migration.md}. {@code referrer} and {@code country} are
+ * nullable by design: {@code referrer} is absent when the client sent no {@code Referer}
+ * header, {@code country} is null when the geo-IP lookup failed soft (R-7, AC20).
+ *
+ * <p>Uses a plain {@code shortLinkId} foreign-key column rather than a JPA
+ * {@code @ManyToOne} association -- stats aggregation only ever needs the id, so this
+ * avoids incidental lazy-loading/association-fetch concerns for a purely analytical row.
  */
 @Entity
 @Table(name = "click_event")
@@ -32,14 +37,18 @@ public class ClickEventEntity {
     @Column(name = "referrer", length = 512)
     private String referrer;
 
+    @Column(name = "country", length = 2)
+    private String country;
+
+    /** Required by JPA. */
     protected ClickEventEntity() {
-        // JPA requires a no-arg constructor
     }
 
-    public ClickEventEntity(Long shortLinkId, Instant occurredAt, String referrer) {
-        this.shortLinkId = shortLinkId;
-        this.occurredAt = occurredAt;
+    public ClickEventEntity(Long shortLinkId, Instant occurredAt, String referrer, String country) {
+        this.shortLinkId = Objects.requireNonNull(shortLinkId, "shortLinkId");
+        this.occurredAt = Objects.requireNonNull(occurredAt, "occurredAt");
         this.referrer = referrer;
+        this.country = country;
     }
 
     public Long getId() {
@@ -56,5 +65,9 @@ public class ClickEventEntity {
 
     public String getReferrer() {
         return referrer;
+    }
+
+    public String getCountry() {
+        return country;
     }
 }

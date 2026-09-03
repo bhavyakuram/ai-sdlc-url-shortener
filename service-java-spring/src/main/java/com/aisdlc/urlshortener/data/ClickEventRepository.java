@@ -6,7 +6,5 @@ import java.util.List;
 
 public interface ClickEventRepository extends JpaRepository<ClickEventEntity, Long> {
 
-    List<ClickEventEntity> findByShortLinkIdOrderByOccurredAtDesc(Long shortLinkId);
-
-    long countByShortLinkId(Long shortLinkId);
+    List<ClickEventEntity> findByShortLinkId(Long shortLinkId);
 }

@@ -1,11 +1,11 @@
 # Rule: Reliability Metrics
 
 **Category:** Optimization · **Priority:** 3
-**Status: NEW — added to satisfy the assignment's explicit "success
-rate, retry/rollback frequency, MTTR, and end-to-end latency" tracking
-requirement. The source framework's `_token-telemetry.json` tracks cost
-only; this file adds the reliability dimension alongside it using the
-same per-run, per-feature file convention.**
+**Status: NEW — added specifically to satisfy the assignment's explicit
+"success rate, retry/rollback frequency, MTTR, and end-to-end latency"
+tracking requirement. `_token-telemetry.json` tracks cost only; this
+file adds the reliability dimension alongside it, using the same
+per-run, per-feature file convention.**
 
 ## `_reliability-metrics.json`
 Written by `sdlc-launcher` at every phase transition (see Section 11,

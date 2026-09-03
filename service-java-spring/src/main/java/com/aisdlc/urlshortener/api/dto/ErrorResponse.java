@@ -1,9 +1,13 @@
 package com.aisdlc.urlshortener.api.dto;
 
-/**
- * Machine-readable error shape. {@code code} is stable and meant for
- * programmatic handling (e.g. {@code ALIAS_TAKEN}); {@code message} is
- * for humans. See step2/ux-flow.md Interaction Rules.
- */
-public record ErrorResponse(String code, String message) {
+import org.springframework.http.HttpStatus;
+
+import java.time.Instant;
+
+/** Standard error envelope for every 4xx/5xx response (feature-spec.md Section 1). */
+public record ErrorResponse(Instant timestamp, int status, String error, String code, String message) {
+
+    public static ErrorResponse of(HttpStatus status, String code, String message) {
+        return new ErrorResponse(Instant.now(), status.value(), status.getReasonPhrase(), code, message);
+    }
 }

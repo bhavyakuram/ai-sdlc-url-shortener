@@ -1,42 +1,61 @@
-# Scenario 3: Ambiguous — `url-shortener-analytics-reliability`
+# Scenario 3: Ambiguous — `url-shortener-analytics-reliability` (agentic mode, real trigger)
 
-**Command:** `/run-sdlc java-spring url-shortener-analytics-reliability services-doc --mode=hybrid`
+**Triggered directly**: `/sdlc-launcher java-spring url-shortener-analytics-reliability services-doc --mode=agentic`
 **Full trail:** [`.claude/output/url-shortener-analytics-reliability/`](../../.claude/output/url-shortener-analytics-reliability/)
 
-## Decomposition
+## The setup, verified authentic before dispatch
 The raw request ([`request.md`](../../.claude/inputs/url-shortener-analytics-reliability/supporting-docs/request.md))
-was filed under `services-doc` (audit-only) but *itself* said
-"tighten it up if needed" — conditional code-change language. `triage`
-recommended `services-mod` instead, directly conflicting with the
-filed posture. `posture-feasibility` formally caught this as a
-**MISMATCH** — the exact worked example that rule was written around.
+is filed `services-doc` (audit-only) but its own wording — "tighten it
+up if needed" — is conditional code-change language. Before dispatching
+anything, the conductor confirmed the click-write in the *current*
+`LinkService.java` genuinely had no failure isolation yet (deliberately
+never re-applied in the fresh greenfield/brownfield builds), so this
+run's investigation is real, not staged.
 
-## Orchestration — the point of this scenario
-Gate 1 extended with role-confirmation options
-(RATIFY / EXPAND_LANES / NARROW_LANES / NO-GO) instead of the
-framework silently picking a side. The investigation itself (code
-reading only, per the filed `doc` posture) found **no bug matching the
-original fear** ("quietly losing data" — no such mechanism exists in
-the code) but did find one smaller, real, different issue: a
-click-write failure would fail the whole redirect, not just the click
-count. The operator (not the framework) decided **EXPAND_LANES**,
-specifically and only to fix that one finding — logged in
-[`_decisions.yaml`](../../.claude/output/url-shortener-analytics-reliability/_decisions.yaml)
-along with an explicit reconciliation against `rules/mode-policy.md`'s
-"axes frozen for the run" rule (the expansion happens at Gate 1, before
-any spec/design/generation work exists — not a mid-flight change after
-commitment).
+## `posture-feasibility` caught the mismatch — and the investigation found something *more precise* than the original fear
+`triage` independently recommended `services-mod`, conflicting with
+the filed `services-doc`. The investigation (reading the real code
+fresh) found: **not silent data loss** (a failure is logged and
+returns `500` — loud, not quiet) — but a real, different, fixable
+defect: **availability coupling**. A transient analytics-write hiccup
+currently fails the user's redirect too, and the existing rate limiter
+doesn't even protect against a viral-link burst (it's scoped per
+IP+code, not total concurrent traffic). Gate 1 extended with
+RATIFY/EXPAND_LANES/NO-GO; the operator chose **EXPAND_LANES**,
+specifically and only for this finding.
+
+## The fix had a real, easy-to-miss correctness trap
+The obvious fix — wrap the click-write in try/catch — has a subtle
+bug if implemented with `save()` instead of `saveAndFlush()`:
+`@Transactional`'s AOP proxy defers the physical `INSERT` to
+transaction-commit time, *after* the method returns — so a try/catch
+around a plain `save()` would catch nothing for the real failure mode
+(lock timeout, pool exhaustion under a burst). This was caught at
+design review (STEP-3), not left for a production incident to surface.
+`@Async` was considered and rejected on 3 independent grounds
+(no async infra exists; would reintroduce the exact self-invocation
+risk the brownfield run already fixed once; would silently change the
+tested immediate-consistency behavior).
+
+## A retry that was the conductor's own mistake, accounted for the same way
+The first build attempt failed — not a design flaw, but a bug in the
+conductor's own new unit test (a bare `ShortLinkEntity` never gets a
+JPA-managed `id`, and `ClickEventEntity` requires one). Fixed and
+logged with the same honesty applied to every subagent's mistakes in
+this project — no exemption for "the orchestrator did it."
 
 ## Validation
-The fix (isolate the click-write in a try/catch, not the whole method)
-was implemented, and — rather than trusting the try/catch by
-inspection — a Mockito test **forces** the click-write to throw and
-asserts the redirect still succeeds. 20/20 tests pass. Score **0.95**
-→ **COMPLETE**.
+Forced-failure test's own log output proves the fix actually works,
+not just that the test passed: *"Failed to record click for code
+'fail-test' ... redirect will proceed without recording this click."*
+53/53 tests pass (3 new + 50 pre-existing, zero regression), verified
+with 2 consecutive `mvn clean test` runs. 91.6% coverage.
+`grading-feedback` scored **0.985** → **COMPLETE**.
 
 ## What This Scenario Demonstrates
-Requirement Understanding's hardest case: an ambiguity that isn't just
-"the spec is vague" but "the filed process itself doesn't match the
-request" — surfaced explicitly, decided by a human, and then scoped
-tightly to what was actually found rather than opening up unrelated
-"improvements."
+The hardest case for "Requirement Understanding": an ambiguity that
+isn't just a vague spec but a **mismatch between the filed process
+and the request itself** — surfaced explicitly rather than silently
+resolved either way, investigated for what's *actually* true rather
+than confirming the original fear, and fixed with a design review
+rigorous enough to catch a real correctness trap before it shipped.

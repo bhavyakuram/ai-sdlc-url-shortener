@@ -1,0 +1,18 @@
+{
+  "feature_id": "url-shortener-analytics-reliability",
+  "mode": "agentic",
+  "trigger": "real /sdlc-launcher skill invocation",
+  "phase_events": [
+    {"phase": "PRE-WORK", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false},
+    {"phase": "STEP-2+3", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false},
+    {"phase": "STEP-4", "verdict": "FAIL_THEN_PASS", "retries_consumed": 1, "rolled_back": false, "note": "conductor's own test-setup NPE, not a design/generation flaw"},
+    {"phase": "STEP-5", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false},
+    {"phase": "STEP-6", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false}
+  ],
+  "success_rate": 0.8,
+  "mttr_seconds": null,
+  "end_to_end_latency_seconds": null,
+  "retry_frequency": 0.2,
+  "rollback_frequency": 0.0,
+  "note": "Gate 1 EXPAND_LANES (services-doc -> services-mod) is a role-scope decision, not a retry/rollback -- tracked separately in _decisions.yaml."
+}

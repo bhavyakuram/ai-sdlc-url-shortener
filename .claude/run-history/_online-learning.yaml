@@ -1,8 +1,20 @@
-# Cross-run learning data. Empty until the first runs complete.
-# Schema per matrix row (stack x role):
-# matrix_rows:
-#   java-spring/fullstack:
-#     gate_decisions: {gate_4: [], gate_5: []}   # last N decisions, for online-learning auto-approval eligibility
-#     pass_history: []                             # for adaptive-gate retry-budget calibration
-#     reliability: {success_rate: null, mttr_seconds: null}
-matrix_rows: {}
+matrix_rows:
+  java-spring/greenfield:
+    gate_decisions:
+      gate_0: [APPROVED]
+      gate_1: [GO]
+      gate_2: [APPROVED]
+      gate_3: [APPROVED]
+      gate_6: [NO_EXCLUSIONS]
+    pass_history: [PASS]
+    reliability: {success_rate: 0.875, mttr_seconds: null, retries_consumed_total: 1}
+    note: "1 run. Real BLOCKER + retry (STEP-4 compile error)."
+  java-spring/services-mod:
+    gate_decisions:
+      gate_1: [GO, EXPAND_LANES]
+      gate_2: [APPROVED, APPROVED]
+      gate_3: [APPROVED, APPROVED]
+      gate_6: [NO_EXCLUSIONS]
+    pass_history: [PASS, PASS]
+    reliability: {success_rate: 0.9, mttr_seconds: null, retries_consumed_total: 1}
+    note: "2 runs (url-shortener-bulk-shorten: clean, 0 retries; url-shortener-analytics-reliability: 1 retry, conductor's own test bug). online-learning still nowhere near the 10-consistent-decision threshold -- Gate 1's second decision here was EXPAND_LANES, not GO, so 'consistent' wouldn't even apply yet regardless of count."

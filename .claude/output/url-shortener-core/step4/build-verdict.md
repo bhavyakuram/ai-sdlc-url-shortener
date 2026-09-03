@@ -4,33 +4,27 @@ agent: build-verdict
 
 # Build Verdict (STEP-4.1)
 
-**PASS.** Real toolchain invoked — not asserted from reading source
-(`rules/build-green.md`).
+**Attempt 1: FAIL — BLOCKER.**
+```
+RateLimitInterceptor.java:[54,47] cannot find symbol: SC_TOO_MANY_REQUESTS
+```
+Routed back to generator per `rules/build-green.md`. Retry 1/5
+consumed. Fix applied directly by conductor (single-line, mechanical
+— `HttpStatus.TOO_MANY_REQUESTS.value()` was already imported and used
+two lines below; no design judgment needed, so no subagent re-dispatch).
 
-## Environment note
-Neither `java`/`javac`/`mvn` were on PATH; located an IntelliJ-managed
-JDK 19 (`~/.jdks/openjdk-19`) and IntelliJ's bundled Maven
-(`plugins/maven/lib/maven3`). The stack manifest's original Java
-21/Spring Boot 3.3 declaration was corrected to Java 19/Spring Boot
-3.1.4 to match what's actually installed and cached in `~/.m2`
-(offline build — no network access assumed). See
-`stacks/java-spring/stack-manifest.md` for the recorded correction.
-
-## Command
+**Attempt 2: PASS.**
 ```
 mvn -o -DskipTests compile
-```
-
-## Result
-```
+[INFO] Compiling 25 source files
 [INFO] BUILD SUCCESS
-[INFO] Total time:  1.353 s
 ```
-18 `.class` files produced under `target/classes` (17 source files;
-`LinkService.AnalyticsResult` is a nested record compiling to an
-additional class file).
+2 non-blocking deprecation warnings (MaxMind `getCountry()`/`getIsoCode()`
+marked for removal; a Bucket4j API deprecation) — MEDIUM/LOW per
+`rules/quality-gates.md` severity bands, report-only, no gate.
 
-## Severity Bands
-No BLOCKER, HIGH, MEDIUM, or LOW findings — clean compile.
+**Also added**: `jacoco-maven-plugin` 0.8.11 to `pom.xml` — omitted from
+the generator dispatch instructions (my oversight as conductor), added
+directly rather than re-dispatching generator for a build-config-only change.
 
-Routing: PASS → STEP-5 Validation.
+Routing: PASS → STEP-5.

@@ -1,10 +1,11 @@
 feature_id: url-shortener-analytics-reliability
 stack: java-spring
-role: services-mod   # EXPANDED at Gate 1 from filed services-doc — see _decisions.yaml gate 1
+role: services-mod   # EXPANDED at Gate 1 from filed services-doc
 role_as_filed: services-doc
-mode: hybrid
+mode: agentic
 platform: none
-posture: mod
-layers_in_scope: [api, service]
-contract_posture: producer
+posture: doc
+layers_in_scope: [api, service]   # read-only per services-doc
+contract_posture: consumer
 retry_budget: 5
+agents_skipped_if_ratified: [generator, test-generation]

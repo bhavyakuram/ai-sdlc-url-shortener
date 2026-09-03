@@ -1,17 +1,50 @@
+server:
+  port: 8080
+
 spring:
   application:
     name: url-shortener
   datasource:
-    url: jdbc:h2:mem:urlshortener;DB_CLOSE_DELAY=-1
+    # H2 in FILE mode, not in-memory -- Gate 0 hard requirement (idea.md "don't lose
+    # data"), FR-5, risk-register.md R-1. AUTO_SERVER=TRUE allows a second local
+    # connection (e.g. the H2 shell) without stepping on the running app.
+    url: jdbc:h2:file:./data/urlshortener;AUTO_SERVER=TRUE
     driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  sql:
+    init:
+      # Force schema.sql to run even though H2 file-mode isn't always detected as
+      # "embedded" by Spring Boot's auto-init heuristic -- schema.sql is the ground
+      # truth (state-migration.md), Hibernate does not manage DDL (ddl-auto: none).
+      mode: always
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     open-in-view: false
+    defer-datasource-initialization: false
+  h2:
+    console:
+      # Hard-disabled: no auth layer exists anywhere in this service (FR-6), so an
+      # exposed H2 console is a direct unauthenticated-RCE surface (risk-register.md
+      # R-3 / R-6, CVE-2021-42392). Must stay false in every non-local profile.
+      enabled: false
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
 
-app:
-  short-link:
-    default-expiry-days: 90
+urlshortener:
+  geoip:
+    # R-7: the real GeoLite2-Country.mmdb is NOT a Maven artifact -- it requires a
+    # free MaxMind account, an accepted EULA, and a license key that expires every
+    # 90 days. It is intentionally absent from this build environment. GeoLookupService
+    # fails soft (logs a warning, returns null/"unknown" country) when this path does
+    # not resolve to a readable database -- see GeoLookupService's javadoc.
+    database-path: ${GEOIP_DB_PATH:./geoip/GeoLite2-Country.mmdb}
+  rate-limit:
+    requests-per-minute: 100
+    window-seconds: 60
 
-server:
-  port: 8080
+logging:
+  level:
+    com.aisdlc.urlshortener: INFO

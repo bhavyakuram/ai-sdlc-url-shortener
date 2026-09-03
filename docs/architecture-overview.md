@@ -2,14 +2,18 @@
 
 **Project:** URL Shortener, built end-to-end by an agentic SDLC
 orchestration framework (Agentic-Proficient Software Engineer
-assignment). This document is the **Architecture Overview** deliverable.
+assignment). This document is the **Architecture Overview**
+deliverable: the framework's static structure and the reasoning behind
+it. For the step-by-step run-time flow and a full mapping against the
+assignment's own requirements, see
+[`docs/aisdlc-flow-and-compliance.md`](aisdlc-flow-and-compliance.md).
 
 ## 1. What This Is
 
-A reproduction of a production AI-SDLC framework (agent + skill
-architecture, 8 HITL gates, dependency-graph phase pipeline, retry /
-rollback / safe-stop, audit-grade telemetry), retargeted from its
-original multi-stack mobile/web/backend project onto a single
+An agentic AI-SDLC orchestration framework — agent + skill architecture,
+8 HITL gates, a dependency-graph phase pipeline, retry / rollback /
+safe-stop, audit-grade telemetry — designed and built from scratch
+against the assignment's requirements document, and scoped to a single
 service: a URL shortener, buildable in either **Java (Spring Boot)**
 or **Python (FastAPI)** via a runtime `stack` argument — no code
 duplication between the two, because the framework itself never
@@ -20,7 +24,7 @@ hardcodes a language.
 ```
 OPERATOR (Human-In-The-Loop)
     |
-/run-sdlc <stack> <feature> [role] [--mode] [--platform]
+/sdlc-launcher <stack> <feature> [role] [--mode] [--platform]
     |
     v
 SDLC LAUNCHER (skills/sdlc-launcher/SKILL.md)  <-- the orchestrator
@@ -57,15 +61,15 @@ debugger.
 | Axis | Answers | Values for this project |
 |---|---|---|
 | Stack | What technology are we building with? | `java-spring` \| `python-fastapi` |
-| Role | What slice of the feature are we delivering? | `fullstack` (default) \| `services-dev` \| `services-mod` \| `services-doc` \| `greenfield` |
-| Mode | How autonomous is the pipeline? | `deterministic` \| `hybrid` (default) \| `agentic` |
+| Role | What slice of the feature are we delivering? | `fullstack` (default) \| `services-mod` \| `services-doc` \| `greenfield` |
+| Mode | How autonomous is the pipeline? | `deterministic` \| `hybrid` \| `agentic` (default for this project) |
 | Platform | What cloud infrastructure? | `none` (default) — no cloud overlay needed for this scope |
 
 ## 4. The Phase Pipeline
 
 | Phase | Purpose | Key agents | Gate(s) |
 |---|---|---|---|
-| STEP-0 (greenfield only) | Concept → prototype | concept-refinement, market-research, ux-prototype | 0, 0.5 |
+| STEP-0 (greenfield only) | Concept → prototype | concept-refinement, market-research, ux-prototype (conditional — only if the stack declares a `frontend` layer; not for this project) | 0, 0.5 (0.5 only if ux-prototype fired) |
 | PRE-WORK | Establish immutable context every phase reads | triage, code-graph-bootstrap, architecture-analysis, codebase-context, requirement-ingestion, posture-feasibility, role-feasibility-pass1 | — |
 | STEP-1 Discovery | Is this feasible? What's the risk? | feasibility, dependency-audit, impact-analysis, risk-analysis, role-feasibility-pass2, git-history-capture | 1 |
 | STEP-2 Spec & UX | Define WHAT the feature does | feature-spec, ux-design, acceptance-criteria | 2 |
@@ -115,8 +119,9 @@ retry that itself regresses previously-passing work, the framework
 **rolls back** the current wave to the last known-good commit and
 **safe-stops** — surfacing at Gate 4 with full failure history rather
 than looping forever or failing silently
-(`.claude/rules/retry-rollback-safestop.md`, added to close a gap
-in the source framework relative to this assignment's explicit ask).
+(`.claude/rules/retry-rollback-safestop.md`, added specifically to
+satisfy the assignment's explicit "bounded retries, fallback, rollback,
+and safe-stop controls" requirement).
 
 ## 8. Observability & Reliability Metrics
 
@@ -132,9 +137,9 @@ Every run writes, per feature-id:
 
 1. **Markdown/YAML as the framework's own implementation language** —
    the orchestration control-plane is ~300 Markdown files + ~80 YAML
-   files + 2 Python hook scripts. No compiled orchestrator binary.
-   This mirrors the source framework's own philosophy and keeps every
-   decision inspectable as plain text.
+   files + 2 Python hook scripts. No compiled orchestrator binary,
+   so every decision the launcher and its agents make stays
+   inspectable as plain text.
 2. **techStack as a runtime axis, not a build-time choice** — the same
    agent/skill/rule files drive either `java-spring` or
    `python-fastapi` output; only `stacks/{stack}/` differs.
@@ -143,17 +148,18 @@ Every run writes, per feature-id:
    thresholds, audit log) lives in plain files the launcher
    reads/writes; the SDLC reasoning itself is delegated to Claude Code
    subagents per phase.
-4. **Reduced axis catalog vs. the source framework** — 5 roles (not 28),
-   2 stacks (not 7), 1 active platform (`none`, not 4) — because this
-   project is one service, not a 7-client mobile/web/backend program.
-   The mechanism (gates, retries, rules, audit) is reproduced in full.
+4. **Axis catalog sized to the actual scope** — 4 roles, 2 stacks, 1
+   active platform (`none`) — because this project is one service, not
+   a multi-client mobile/web/backend program. The mechanism (gates,
+   retries, rules, audit) is implemented in full regardless of how
+   small the catalog is.
 
 ## 10. Known Limitations (see also `docs/testing-and-limitations.md`)
 
 - Rollback is git-based (revert the current wave's files) — it does
   not yet handle a rollback that spans a completed database migration.
-- `agentic` mode (conductor, parallel-explorer, online-learning) is a
-  stretch demonstration; the primary path for this assignment is
-  `hybrid` mode.
+- `online-learning`'s auto-approval needs 10 consistent decisions per
+  gate+matrix-row to activate — this project's run count won't reach
+  that threshold, so it stays documented but unexercised in practice.
 - MCP integrations beyond `code-graph` are scaffolded but inactive —
   there is no live Jira/Figma workspace for this assignment.

@@ -1,8 +1,9 @@
 ---
 mode_id: agentic
+default: true
 ---
 
-# Mode: agentic
+# Mode: agentic (default)
 
 **Conductor agent orchestrates within a matrix row.** Maximum autonomy,
 cost-capped.
@@ -22,6 +23,10 @@ bypass Gates 0-3, override standards, or exceed the 2x cost cap — see
 `rules/mode-policy.md`.
 
 ## When To Use
-A stretch-goal demonstration for this assignment (Core Requirement #7,
-"Controlled Autonomy") once the hybrid-mode path is proven working —
-not the primary path given the 2-3 day budget.
+**The default and primary path for this project.** The assignment's
+Core Requirement #7 ("Controlled Autonomy: Agents execute multi-step
+work; humans provide oversight, approvals, and final quality control")
+and its repeated emphasis on "agentic" orchestration call for this mode
+specifically, not hybrid's more conservative posture — hybrid remains
+available as a documented fallback (see `modes/hybrid/mode-manifest.md`)
+but is not what this project demonstrates by default.

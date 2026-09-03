@@ -1,6 +1,17 @@
 ---
+name: sdlc-launcher
 skill_id: sdlc-launcher
 implements_agent: none (the entry point — orchestrates all other agents)
+description: >
+  THE entry point for the AI-SDLC framework. Invoke as
+  /sdlc-launcher <stack> <feature-id> [role] [--mode=deterministic|hybrid|agentic] [--platform=none|aws|gcp|azure]
+  — e.g. "/sdlc-launcher java-spring url-shortener-core greenfield --mode=agentic".
+  Resolves the four configuration axes (stack/role/mode/platform),
+  bootstraps shared context, then dispatches every phase agent
+  (STEP-0..STEP-6) in order, pausing at each HITL gate for a real
+  operator decision. Use this whenever asked to run/start/launch a
+  feature through the framework, or to continue/resume one that's
+  in progress.
 ---
 
 # Skill: SDLC Launcher

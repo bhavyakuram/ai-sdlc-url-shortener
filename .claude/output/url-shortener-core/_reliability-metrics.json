@@ -1,20 +1,21 @@
 {
   "feature_id": "url-shortener-core",
+  "mode": "agentic",
+  "trigger": "real /sdlc-launcher skill invocation",
   "phase_events": [
     {"phase": "STEP-0", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false},
     {"phase": "PRE-WORK", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false},
     {"phase": "STEP-1", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false},
     {"phase": "STEP-2", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false},
     {"phase": "STEP-3", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false},
-    {"phase": "STEP-4", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false},
+    {"phase": "STEP-4", "verdict": "FAIL_THEN_PASS", "retries_consumed": 1, "rolled_back": false},
     {"phase": "STEP-5", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false},
     {"phase": "STEP-6", "verdict": "PASS", "retries_consumed": 0, "rolled_back": false}
   ],
-  "success_rate": 1.0,
+  "success_rate": 0.875,
   "mttr_seconds": null,
-  "note_on_mttr": "No FAIL verdict occurred this run, so MTTR is undefined (no failure to recover from) rather than 0 — 0 would misleadingly imply an instantaneous recovery happened.",
   "end_to_end_latency_seconds": null,
-  "note_on_latency": "Not wall-clock-instrumented in this manual dry run (no launcher process actually timestamping phase entry/exit) — a real /run-sdlc execution would populate this from actual timestamps.",
-  "retry_frequency": 0.0,
-  "rollback_frequency": 0.0
+  "retry_frequency": 0.125,
+  "rollback_frequency": 0.0,
+  "note": "First run with a real, non-zero retry (1/8 phase-attempts failed then passed on retry — a genuine BLOCKER, not simulated). Wall-clock timestamps still not tracked (manual orchestration, no automated phase clock)."
 }

@@ -3,7 +3,7 @@ agent_id: ux-prototype
 category: STEP0
 phase: step0
 model_tier: sonnet
-conditional: greenfield only
+conditional: greenfield AND active stack declares a `frontend` layer
 calls_skill: skills/step0/ux-prototype/SKILL.md
 ---
 
@@ -25,7 +25,14 @@ step0/ux-prototype/ (HTML files)
 none
 
 ## Conditional Firing
-greenfield only
+Fires only when BOTH hold: `role=greenfield` AND the active stack's
+`stack-manifest.md` declares a `frontend` layer. An API/service-only
+stack (e.g. `java-spring`, `python-fastapi` as declared for this
+project) has no UI to prototype — firing anyway would produce an
+illustrative mockup disconnected from what `generator` actually
+builds, which is a cost with no corresponding benefit. This was
+initially specified as "greenfield only" (unconditional); corrected
+after a run demonstrated the mismatch in practice.
 
 ## Contract
 This agent is a declaration only: WHAT it does, WHEN it fires, WHAT it

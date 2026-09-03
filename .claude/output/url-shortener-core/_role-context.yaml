@@ -1,34 +1,18 @@
 feature_id: url-shortener-core
 stack: java-spring
 role: greenfield
-mode: hybrid
+mode: agentic
 platform: none
 layers_in_scope: [api, service, data]
 contract_posture: producer
-agents_in_scope:
-  step0: [concept-refinement, market-research, ux-prototype]
-  prework: [triage, code-graph-bootstrap, architecture-analysis, codebase-context, requirement-ingestion, posture-feasibility]
-  # role-feasibility-pass1/pass2 skipped: greenfield posture, not *-mod
-  step1: [feasibility, dependency-audit, impact-analysis, risk-analysis]
-  step2: [feature-spec, ux-design, acceptance-criteria]
-  step3: [technical-design, api-contract, state-migration]
-  step4: [planner, generator, build-verdict]
-  step5: [test-generation, coverage-edge, evaluator]
-  step6: [static-analysis, security-audit, grading-feedback]
-agents_skipped: [role-feasibility-pass1, role-feasibility-pass2, git-history-capture, refactor-migration]
-policies:
-  code_reuse: {active: false}   # active_postures: [mod] only; this run is greenfield
-  refactor_completeness: {active: false}
-  primitive_exclusions: {active: false}
+retry_budget: 5   # adaptive-gate: run-history/_online-learning.yaml is empty (reset) — no history to calibrate from
 gate_thresholds:
-  gate_0: always_active
-  gate_0_5: always_active
-  gate_1: always_active
-  gate_2: always_active
-  gate_3: always_active
-  gate_4: always_active
-  gate_5: always_active
-  gate_6: always_active_never_auto
-retry_budget_per_lane: 5
-resolved_by: role-resolver
-resolved_at: run-start
+  gate_0: active_never_auto
+  gate_0_5: not_applicable   # ux-prototype does not fire — no frontend layer declared
+  gate_1: active_never_auto
+  gate_2: active_never_auto
+  gate_3: active_never_auto
+  gate_4: auto_eligible_after_10_consistent
+  gate_5: auto_eligible_after_10_consistent
+  gate_6: active_never_auto
+cost_cap_multiplier: 2.0

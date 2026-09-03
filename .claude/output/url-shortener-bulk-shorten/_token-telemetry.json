@@ -1,5 +1,0 @@
-{
-  "feature_id": "url-shortener-bulk-shorten",
-  "stack": "java-spring",
-  "note": "Not instrumented in this manual dry run — see url-shortener-core's _token-telemetry.json for the same caveat."
-}

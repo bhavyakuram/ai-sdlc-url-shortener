@@ -1,8 +1,7 @@
 # CLAUDE.md — Master Orchestration Rules
 
 **Priority 2 in the rule hierarchy** (below explicit user instruction,
-above everything else — see `rules/` priority list in
-`docs/architecture-overview.md` Section 8).
+above everything else — see the "Rule Priority Hierarchy" list below).
 
 ## What This Framework Is
 An agentic, multi-phase SDLC pipeline that takes a feature (greenfield,
@@ -13,9 +12,11 @@ human-in-the-loop gates, and a configurable technology stack
 
 ## Entry Point
 ```
-/run-sdlc <stack> <feature> [role] [--mode=deterministic|hybrid|agentic] [--platform=none|aws|gcp|azure]
+/sdlc-launcher <stack> <feature> [role] [--mode=deterministic|hybrid|agentic] [--platform=none|aws|gcp|azure]
 ```
-Resolved and dispatched by `skills/sdlc-launcher/SKILL.md`. Do not
+A real, invokable Claude Code skill — `skills/sdlc-launcher/SKILL.md`
+(Claude Code auto-discovers every `.claude/skills/*/SKILL.md`, named
+after its directory; no separate command registration needed). Do not
 invoke phase agents directly — always go through the launcher so the
 dependency graph, gates, retry tracking, and audit log stay consistent.
 
@@ -23,10 +24,10 @@ dependency graph, gates, retry tracking, and audit log stay consistent.
 Resolved once at run start, frozen for the run's duration (mid-run
 change of any axis is forbidden):
 1. **Stack** (technology) — `java-spring` | `python-fastapi`
-2. **Role** (scope) — `fullstack` | `services-dev` | `services-mod` |
-   `services-doc` | `greenfield`
-3. **Mode** (execution posture) — `deterministic` | `hybrid` (default)
-   | `agentic`
+2. **Role** (scope) — `fullstack` | `services-mod` | `services-doc` |
+   `greenfield`
+3. **Mode** (execution posture) — `deterministic` | `hybrid` |
+   `agentic` (default for this project — see `modes/agentic/mode-manifest.md`)
 4. **Platform** (cloud overlay) — `none` (default) | `aws` | `gcp` |
    `azure`
 
@@ -46,8 +47,7 @@ Implementation` ⇄ `STEP-5 Validation` ⇄ `STEP-6 Audit & Grading` →
 - Every factual claim must be backed by a verbatim tool-call output
   (Proof Over Promise).
 - A feature is COMPLETE only when `rules/quality-gates.md`'s
-  Completion Criteria all hold — see `docs/architecture-overview.md`
-  Section 12.
+  Completion Criteria (Final Grading, STEP-6.3) all hold.
 
 ## Rule Priority Hierarchy
 1. Explicit user instruction (highest — human always wins)

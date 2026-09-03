@@ -2,30 +2,17 @@
 agent: build-verdict
 ---
 
-# Build Verdict (STEP-4.1)
-
-**PASS.**
-
-## Command
+**PASS on first attempt** (no retry needed this time).
 ```
 mvn -o -DskipTests compile
-```
-
-## Result
-```
-[INFO] Compiling 20 source files with javac [debug release 19] to target\classes
+[INFO] Compiling 35 source files
 [INFO] BUILD SUCCESS
 ```
-(18 → 20 source files: +3 new DTOs, `LinkController.java` modified,
-`LinkService.java` unmodified — see `generator-summary.md`.)
+Same 2 classes of non-blocking deprecation warning as the greenfield
+run (MaxMind, Bucket4j APIs) — MEDIUM/LOW, report-only.
 
-## Layer-Boundary Re-Verification (rules/architecture.md)
-```
-grep -rn "import com.aisdlc.urlshortener.api" service/ data/
--> CLEAN — no api imports found in service/ or data/
-```
-The generator-summary.md deviation (keeping the per-item loop in
-`LinkController`, not `LinkService`) is confirmed to actually hold the
-dependency-direction rule, not just claimed to.
+**Layer boundaries**: re-verified independently by conductor (not just
+trusting generator's own check) — `grep` clean across the entire
+`service/`+`data/` tree, not just the 3 new files.
 
-Routing: PASS → STEP-5 Validation.
+Routing: PASS → STEP-5.

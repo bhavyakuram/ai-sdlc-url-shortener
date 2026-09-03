@@ -1,14 +1,10 @@
-# Valid role combinations for this project's 5 roles (trimmed from the
-# source framework's 27-row / 28-role matrix to what a single URL-shortener
-# service needs). "valid: false" combinations are rejected by stack-validator
-# at launch.
+# Valid role combinations for this project's 4 roles — scoped to what a
+# single URL-shortener service needs, not a larger multi-role catalog.
+# "valid: false" combinations are rejected by stack-validator at launch.
 combinations:
   - roles: [fullstack]
     valid: true
     note: "Default role. All layers (api, service, data) in scope. Used for the greenfield scenario."
-  - roles: [services-dev]
-    valid: true
-    note: "New module/endpoint, dev posture. Producer of the API contract."
   - roles: [services-mod]
     valid: true
     note: "Patch existing service code, mod posture. Used for the brownfield scenario."
@@ -18,6 +14,6 @@ combinations:
   - roles: [greenfield]
     valid: true
     note: "Pure ideation-to-app posture. Only role that triggers STEP-0."
-  - roles: [services-dev, services-doc]
+  - roles: [services-mod, services-doc]
     valid: false
-    note: "Conflicting postures (dev vs audit-only) in the same run — reject at stack-validator."
+    note: "Conflicting postures (mod vs audit-only) in the same run — reject at stack-validator."

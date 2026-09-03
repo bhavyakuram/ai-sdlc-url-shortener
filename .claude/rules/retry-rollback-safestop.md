@@ -1,10 +1,11 @@
 # Rule: Retry, Rollback & Safe-Stop
 
 **Category:** Process · **Priority:** 3
-**Status: NEW — added to satisfy the assignment's explicit "bounded
-retries, fallback, rollback, and safe-stop controls" requirement, which
-the source framework covers only partially (retry + Gate-4 waiver).
-This file follows the same conventions as the rest of `rules/`.**
+**Status: NEW — added specifically to satisfy the assignment's explicit
+"bounded retries, fallback, rollback, and safe-stop controls"
+requirement, extending `retry-policy.md`'s retry + Gate-4 waiver with
+genuine rollback and safe-stop outcomes. This file follows the same
+conventions as the rest of `rules/`.**
 
 ## Three Distinct Outcomes on Repeated Failure
 1. **Retry** (existing, `retry-policy.md`): re-attempt with explicit

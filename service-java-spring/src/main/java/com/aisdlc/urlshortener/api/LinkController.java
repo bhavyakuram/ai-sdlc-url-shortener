@@ -1,112 +1,117 @@
 package com.aisdlc.urlshortener.api;
 
-import com.aisdlc.urlshortener.api.dto.AnalyticsResponse;
-import com.aisdlc.urlshortener.api.dto.BulkCreateRequest;
-import com.aisdlc.urlshortener.api.dto.BulkCreateResponse;
-import com.aisdlc.urlshortener.api.dto.BulkItemResult;
+import com.aisdlc.urlshortener.api.dto.BatchCreateLinkRequest;
+import com.aisdlc.urlshortener.api.dto.BatchCreateLinkResponse;
+import com.aisdlc.urlshortener.api.dto.BatchItemResult;
 import com.aisdlc.urlshortener.api.dto.CreateLinkRequest;
-import com.aisdlc.urlshortener.api.dto.ErrorResponse;
 import com.aisdlc.urlshortener.api.dto.LinkResponse;
+import com.aisdlc.urlshortener.api.dto.StatsResponse;
+import com.aisdlc.urlshortener.api.util.ClientIpResolver;
 import com.aisdlc.urlshortener.data.ShortLinkEntity;
+import com.aisdlc.urlshortener.service.BulkItemOutcome;
+import com.aisdlc.urlshortener.service.BulkLinkItem;
+import com.aisdlc.urlshortener.service.BulkLinkOrchestrator;
 import com.aisdlc.urlshortener.service.LinkService;
-import com.aisdlc.urlshortener.service.exception.AliasTakenException;
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Valid;
-import jakarta.validation.Validator;
-import org.springframework.http.HttpHeaders;
+import com.aisdlc.urlshortener.service.LinkStats;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.util.ArrayList;
+import java.net.URI;
 import java.util.List;
-import java.util.Set;
 
 /**
- * REST endpoints exactly matching step3/api-contract.yaml +
- * step3/api-contract-delta.yaml. Error mapping for the single-item
- * endpoints (400/404/409/410) lives in {@link ApiExceptionHandler} —
- * kept out of this class so it stays focused on the happy path
- * (rules/coding-standards.md separation). {@link #createBulk} is the
- * one exception: its per-item errors are caught here, not in
- * ApiExceptionHandler, because a per-item failure must not become an
- * HTTP-level error for the whole request (FS-5).
+ * The three-endpoint API surface (feature-spec.md Section 2). {@code GET /{code}} lives at
+ * the root, not under {@code /api/v1}, by deliberate design (a short link must itself be
+ * short) -- feature-spec.md Section 1.
  */
 @RestController
 public class LinkController {
 
     private final LinkService linkService;
-    private final Validator validator;
+    private final BulkLinkOrchestrator bulkLinkOrchestrator;
 
-    public LinkController(LinkService linkService, Validator validator) {
+    public LinkController(LinkService linkService, BulkLinkOrchestrator bulkLinkOrchestrator) {
         this.linkService = linkService;
-        this.validator = validator;
+        this.bulkLinkOrchestrator = bulkLinkOrchestrator;
     }
 
-    @PostMapping("/links")
-    public ResponseEntity<LinkResponse> createLink(@Valid @RequestBody CreateLinkRequest request) {
-        ShortLinkEntity created = linkService.createLink(
-                request.targetUrl(), request.alias(), request.expiresInDays());
-        return ResponseEntity.status(HttpStatus.CREATED).body(LinkResponse.from(created));
-    }
-
-    @GetMapping("/{code}")
-    public ResponseEntity<Void> redirect(
-            @PathVariable String code,
-            @RequestHeader(value = "Referer", required = false) String referrer) {
-        String targetUrl = linkService.resolveAndRecordClick(code, referrer);
-        return ResponseEntity.status(HttpStatus.FOUND)
-                .header(HttpHeaders.LOCATION, targetUrl)
-                .build();
-    }
-
-    @GetMapping("/links/{code}/analytics")
-    public ResponseEntity<AnalyticsResponse> analytics(@PathVariable String code) {
-        var result = linkService.getAnalytics(code);
-        return ResponseEntity.ok(AnalyticsResponse.from(result));
+    @PostMapping("/api/v1/links")
+    public ResponseEntity<LinkResponse> createLink(@RequestBody CreateLinkRequest request,
+                                                     HttpServletRequest httpRequest) {
+        ShortLinkEntity link = linkService.createLink(request.url(), request.customCode());
+        String shortUrl = buildShortUrl(httpRequest, link.getCode());
+        LinkResponse body = LinkResponse.from(link, shortUrl);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .location(URI.create("/" + link.getCode()))
+                .body(body);
     }
 
     /**
-     * AC-10 (all-valid) / AC-11 (mixed/partial-failure) / AC-12 (empty,
-     * rejected by {@code @Valid} on the list) / AC-13 (over-limit,
-     * same) / AC-14 (bulk collision-safety, via the unchanged
-     * {@link LinkService#createLink} DB-unique-constraint path).
-     *
-     * <p>Deliberately does NOT delegate the per-item loop to
-     * {@code LinkService} — see step3/technical-design.md: keeping it
-     * here reuses {@code CreateLinkRequest}'s existing validation
-     * annotations via a programmatic {@link Validator#validate} call
-     * (no regex duplication) without requiring the service layer to
-     * import an api-layer DTO, which would violate
-     * rules/architecture.md's api -&gt; service -&gt; data dependency
-     * direction. {@code LinkService} itself is unmodified by this
-     * feature.
+     * Batch-create up to 100 short links in one request (feature-spec.md Section 3.1,
+     * FR-B1/FR-B2/FR-B3). Rate limiting (429) for this endpoint is enforced entirely by
+     * {@link BatchRateLimitInterceptor} before this method runs, on a separate, IP-only
+     * bucket from the redirect path's limiter. Each item is attempted independently via
+     * {@link #bulkLinkOrchestrator} -- through the injected {@link LinkService} proxy, never
+     * a self-invocation (R-BULK-2) -- so one item's failure never affects another's outcome
+     * or persistence (R-BULK-4). Always {@code 200 OK} once whole-request validation passes;
+     * {@link com.aisdlc.urlshortener.service.exception.EmptyBatchException}/{@link
+     * com.aisdlc.urlshortener.service.exception.BatchTooLargeException} thrown by {@link
+     * #bulkLinkOrchestrator} propagate uncaught to {@link ApiExceptionHandler}, exactly like
+     * every other whole-request validation failure in this codebase.
      */
-    @PostMapping("/links/bulk")
-    public ResponseEntity<BulkCreateResponse> createBulk(@Valid @RequestBody BulkCreateRequest request) {
-        List<BulkItemResult> results = new ArrayList<>();
+    @PostMapping("/api/v1/links/batch")
+    public ResponseEntity<BatchCreateLinkResponse> createBatch(@RequestBody BatchCreateLinkRequest request,
+                                                                  HttpServletRequest httpRequest) {
+        List<CreateLinkRequest> requestItems = request.items() != null ? request.items() : List.of();
+        List<BulkLinkItem> items = requestItems.stream()
+                .map(i -> new BulkLinkItem(i.url(), i.customCode()))
+                .toList();
+        List<BulkItemOutcome> outcomes = bulkLinkOrchestrator.processBatch(items);
 
-        for (CreateLinkRequest item : request.items()) {
-            Set<ConstraintViolation<CreateLinkRequest>> violations = validator.validate(item);
-            if (!violations.isEmpty()) {
-                String message = violations.iterator().next().getMessage();
-                results.add(BulkItemResult.error(new ErrorResponse("INVALID_REQUEST", message)));
-                continue;
-            }
-            try {
-                ShortLinkEntity created = linkService.createLink(
-                        item.targetUrl(), item.alias(), item.expiresInDays());
-                results.add(BulkItemResult.created(LinkResponse.from(created)));
-            } catch (AliasTakenException e) {
-                results.add(BulkItemResult.error(new ErrorResponse("ALIAS_TAKEN", e.getMessage())));
-            }
-        }
+        List<BatchItemResult> results = outcomes.stream()
+                .map(o -> o.isSuccess()
+                        ? BatchItemResult.created(o.link(), buildShortUrl(httpRequest, o.link().getCode()))
+                        : BatchItemResult.failed(o.errorCode(), o.errorMessage()))
+                .toList();
+        long successCount = results.stream().filter(r -> "CREATED".equals(r.status())).count();
 
-        return ResponseEntity.ok(new BulkCreateResponse(results));
+        return ResponseEntity.ok(new BatchCreateLinkResponse(results, (int) successCount,
+                results.size() - (int) successCount));
+    }
+
+    /**
+     * Rate limiting (429) for this endpoint is enforced entirely by {@link
+     * RateLimitInterceptor} before this method runs -- it never sees a request past the
+     * (IP, code) bucket's limit.
+     */
+    @GetMapping("/{code}")
+    public ResponseEntity<Void> redirect(@PathVariable String code, HttpServletRequest request) {
+        String referrer = request.getHeader("Referer");
+        String sourceIp = ClientIpResolver.resolve(request);
+        ShortLinkEntity link = linkService.redirectAndRecordClick(code, referrer, sourceIp);
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(link.getTargetUrl()))
+                .build();
+    }
+
+    @GetMapping("/api/v1/links/{code}/stats")
+    public ResponseEntity<StatsResponse> stats(@PathVariable String code) {
+        LinkStats stats = linkService.getStats(code);
+        return ResponseEntity.ok(StatsResponse.from(stats));
+    }
+
+    private String buildShortUrl(HttpServletRequest request, String code) {
+        return ServletUriComponentsBuilder.fromRequestUri(request)
+                .replacePath("/" + code)
+                .replaceQuery(null)
+                .build()
+                .toUriString();
     }
 }

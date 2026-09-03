@@ -8,8 +8,8 @@
   stack+role combination, never exceeding this file's ceiling).
 - Each retry MUST address the explicit feedback from the failing gate —
   silent re-execution of the identical prior attempt is rejected.
-- The retry counter is tracked per role lane independently: in a
-  `fullstack` composite run, `services-dev` and `frontend-dev` lanes
+- The retry counter is tracked per role lane independently: a
+  `fullstack` run's `api`, `service`, and `data` layer lanes each
   have independent budgets.
 - Cache reuse (a shared-context hit) is NOT a retry — it costs zero
   retry budget.

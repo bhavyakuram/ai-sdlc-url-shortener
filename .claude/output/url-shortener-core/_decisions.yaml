@@ -1,28 +1,21 @@
-# Structured HITL decision capture (rules/architecture.md Audit Everything,
-# Key Design Principle #8 — a re-run with this same file reproduces the run's gate outcomes).
 feature_id: url-shortener-core
+mode: agentic
 decisions:
   - gate: 0
-    position: "After concept + market-research"
     decision: APPROVED
-    notes: "3 flagged ambiguities' proposed resolutions accepted as-is: 90-day default TTL (overridable), click-event-log analytics, 409 on alias collision."
+    notes: "All 10 ambiguity resolutions (A1-A10) and market positioning accepted as proposed by the real subagent dispatch."
   - gate: 0.5
-    position: "After ux-prototype"
-    decision: APPROVED
-    notes: "4-screen illustrative mockup accepted; API-only scope framing (not a STEP-4 deliverable) explicitly acknowledged."
+    decision: NOT_APPLICABLE
+    notes: "ux-prototype does not fire — java-spring declares no frontend layer."
   - gate: 1
-    position: "After STEP-1"
     decision: GO
-    notes: "Ratified without conditions. R3 (open-redirect) and R4 (no rate limiting) accepted as documented scope gaps, not blockers."
+    notes: "Ratified without conditions. R-7 (MaxMind license rotation) and R-9 (open-redirect exposure) accepted as documented v1 trade-offs."
   - gate: 2
-    position: "After STEP-2"
     decision: APPROVED
-    notes: "Spec frozen including the 410-vs-404 refinement beyond idea.md's literal ask."
+    notes: "3 endpoints, 404-not-410 for expiry, 25 ACs (AC01-AC25) frozen."
   - gate: 3
-    position: "After STEP-3"
     decision: APPROVED
-    notes: "Design frozen: DB-unique-constraint concurrency strategy, read-time expiry check, no background sweep job."
+    notes: "Candidate A generation strategy, Bucket4j rate limiting, MaxMind GeoIP2 fail-soft, H2 file-mode with console disabled."
   - gate: 6
-    position: "Gate 3 extension"
     decision: NO_EXCLUSIONS
     notes: "No framework/library vetoes requested."

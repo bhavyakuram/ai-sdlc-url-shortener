@@ -1,6 +1,6 @@
 ---
 agent: technical-design
-inputs: [step2/feature-spec.md, step2/acceptance-criteria.md, shared-context/java-spring/snapshots/greenfield-baseline/architecture-context.md]
+inputs: [step2/feature-spec.md, step2/acceptance-criteria.md, step3/parallel-explorer-candidates.md, step1/feasibility-report.md]
 ---
 
 # Technical Design: URL Shortener Service (java-spring)
@@ -8,39 +8,40 @@ inputs: [step2/feature-spec.md, step2/acceptance-criteria.md, shared-context/jav
 ## Component Decomposition
 ```
 com.aisdlc.urlshortener
-├── api/        LinkController (POST /links, GET /{code}, GET /links/{code}/analytics)
-│               dto: CreateLinkRequest, LinkResponse, AnalyticsResponse, ErrorResponse
-├── service/    LinkService (create, resolve+recordClick, getAnalytics)
-│               CodeGenerator (base62 encode of the persisted id)
+├── api/        LinkController (3 endpoints), dto/, ApiExceptionHandler, RateLimitFilter (or interceptor)
+├── service/    LinkService (create/resolve/stats), CodeGenerator, GeoLookupService, RateLimiterService
 └── data/       ShortLinkRepository, ClickEventRepository (Spring Data JPA)
-                entity: ShortLinkEntity, ClickEventEntity
 ```
-Matches `layers_in_scope: [api, service, data]` from `_role-context.yaml`
-and the dependency direction rule (`rules/architecture.md`: api → service
-→ data, never the reverse).
+`layers_in_scope: [api, service, data]`, dependency direction
+api → service → data.
 
-## Technology Choices
-- Spring Boot 3.3 (`spring-boot-starter-web`), Spring Data JPA, H2
-  (prototype default) — all per `stacks/java-spring/stack-manifest.md`.
-- Bean Validation (`@Valid`) on `CreateLinkRequest` for AC-4 (invalid
-  target → 400).
+## Short-Code Generation — Candidate A (parallel-explorer)
+See `step3/parallel-explorer-candidates.md`. Generated-code path:
+insert with placeholder → base62(id) → update, one transaction.
+Custom-code path (including reserved-word check from feature-spec.md
+Section 5): insert directly with unique constraint on `code`, catch
+`DataIntegrityViolationException` → 409.
 
-## Primitive Selection
-- **Short code generation**: persist first with target URL only, get
-  the auto-increment `id`, base62-encode it as the code, then update
-  the row with its own code in the same transaction. This guarantees
-  AC-9 (collision-safety) for free — codes are derived from a
-  DB-guaranteed-unique id, no separate uniqueness check/retry loop
-  needed for the generated-code path.
-- **Custom alias path**: insert with a unique constraint on
-  `short_code`; catch the constraint-violation and translate to AC-3's
-  `409 ALIAS_TAKEN` — this is the retry-free way to get correctness
-  under concurrency (race the DB, don't race in application code).
-- **Expiry check**: a plain `expiresAt` timestamp column, checked at
-  redirect time (`expiresAt.isBefore(now)` → 410). No background
-  expiry sweep needed for v1 — checking at read time is sufficient and
-  simpler (fewer moving parts, per `rules/coding-standards.md`).
+## Rate Limiting (Bucket4j, per step1's dependency choice)
+`com.bucket4j:bucket4j_jdk17-core:8.19.0`, in-process bucket keyed by
+(source IP, code), 100 req/min, 429 beyond that — applied as a
+`HandlerInterceptor` on the redirect endpoint only (create/stats are
+not the abuse surface named in the PRD).
 
-## API Design
-REST + JSON, per `step2/feature-spec.md` FS-1..FS-3 exactly. Full
-schema in `api-contract.yaml` (this phase's sibling output).
+## Geo Lookup (MaxMind GeoIP2, per step1's dependency choice)
+`com.maxmind.geoip2:geoip2:5.2.0` + bundled `GeoLite2-Country.mmdb`,
+country-level only. **Fail-soft** (AC20): a lookup failure (missing
+DB, malformed IP) must not fail the redirect — logs and proceeds with
+`country=null`, consistent with the click-write-isolation pattern
+this project has used before for non-critical side effects.
+
+## Persistence (H2 file-mode, per step0's A4 decision)
+`jdbc:h2:file:./data/urlshortener;` — not in-memory. H2 console
+explicitly disabled outside local dev (risk register R-3: console
+left enabled = unauthenticated RCE given this service has no auth
+layer anywhere).
+
+## Expiry
+`expiresAt` timestamp, checked at read time, 30-day default (A1) →
+404 on redirect (not 410 — feature-spec.md Section 4), stats endpoint
+still queryable after expiry (AC24).

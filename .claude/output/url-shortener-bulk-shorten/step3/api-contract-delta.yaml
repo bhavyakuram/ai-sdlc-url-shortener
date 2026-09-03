@@ -1,9 +1,36 @@
-# Contract-delta amendment to step3/api-contract.yaml from url-shortener-core
-# (sanctioned exception to Write-Once Immutability — rules/architecture.md)
+# STEP-3 contract-delta amendment (rules/architecture.md Write-Once Immutability,
+# sanctioned exception: "contract-delta amendments explicitly approved at a later
+# gate"). This is an ADDITION to url-shortener-core/step3/api-contract.yaml, not a
+# replacement of it -- the three existing paths (/api/v1/links, /{code},
+# /api/v1/links/{code}/stats) are unchanged and are not repeated here.
+#
+# Every field name, status code, and error `code` value below was cross-checked
+# field-by-field against the Gate-2-approved step2/feature-spec.md (Sections 1.1,
+# 3.1) as this file was written -- not copied from memory or from the prior run's
+# stub. See technical-design.md Section 1.1 item 1-3 for the Java types that back
+# these shapes 1:1 (BatchCreateLinkRequest / BatchCreateLinkResponse /
+# BatchItemResult), and Section 5.3 for why CREATED/FAILED fields are mutually
+# exclusive on the wire (@JsonInclude(NON_NULL)).
+#
+# Cross-check table (feature-spec.md section -> field/code -> matched here):
+#   Section 3.1 request table   -> items, items[].url, items[].customCode        -> matched below
+#   Section 3.1 success example -> results, successCount, failureCount           -> matched below
+#   Section 3.1 results[i] table -> status, shortCode, shortUrl, longUrl,
+#                                    createdAt, expiresAt, code, message         -> matched below
+#   Section 1.1 error table     -> EMPTY_BATCH, BATCH_TOO_LARGE, RATE_LIMITED,
+#                                    MALFORMED_REQUEST (whole-request)           -> matched below
+#   Section 1.1 error table     -> INVALID_URL_SCHEME, URL_TOO_LONG,
+#                                    URL_MALFORMED, INVALID_CUSTOM_CODE_SHAPE,
+#                                    RESERVED_CODE, CUSTOM_CODE_TAKEN,
+#                                    CODE_SPACE_EXHAUSTED (per-item, inside
+#                                    results[i], never the request's own status) -> matched below
+
+openapi: 3.1.0
+info: { title: URL Shortener API, version: 1.1.0 }
 paths:
-  /links/bulk:
+  /api/v1/links/batch:
     post:
-      summary: Create multiple short links in one call (1-20 items)
+      summary: Batch-create up to 100 short links in one request (FR-B1, FR-B2, FR-B3)
       requestBody:
         required: true
         content:
@@ -15,31 +42,65 @@ paths:
                 items:
                   type: array
                   minItems: 1
-                  maxItems: 20
-                  items: { $ref: "#/components/schemas/CreateLinkRequestItem" }
+                  maxItems: 100
+                  items:
+                    type: object
+                    required: [url]
+                    properties:
+                      url: { type: string, format: uri, maxLength: 2048 }
+                      customCode: { type: string, pattern: "^[a-zA-Z0-9]{3,32}$" }
       responses:
         "200":
-          description: "Always 200 once the request itself is valid — per-item outcomes are in the body"
+          description: >
+            Always 200 once whole-request validation passes (feature-spec.md Section 1
+            row "Top-level HTTP status") -- per-item outcomes never promote to a
+            top-level 4xx/5xx. results[] has exactly items.length entries, same order
+            as the request (positional correlation, no client-supplied id).
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/BulkCreateResponse" }
-        "400": { description: "items is empty or has more than 20 entries (whole-request rejection)" }
-components:
-  schemas:
-    CreateLinkRequestItem:
-      type: object
-      properties:
-        targetUrl: { type: string, format: uri }
-        alias: { type: string }
-        expiresInDays: { type: integer }
-    BulkCreateResponse:
-      type: object
-      properties:
-        results:
-          type: array
-          items:
-            type: object
-            properties:
-              status: { type: string, enum: [created, error] }
-              link: { $ref: "#/components/schemas/LinkResponse" }
-              error: { $ref: "#/components/schemas/ErrorResponse" }
+              schema:
+                type: object
+                required: [results, successCount, failureCount]
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      required: [status]
+                      description: >
+                        Discriminated on `status`. CREATED carries shortCode/shortUrl/
+                        longUrl/createdAt/expiresAt and omits code/message. FAILED
+                        carries code/message and omits the CREATED fields (wire-level
+                        mutual exclusivity, not just "may be null" -- see
+                        technical-design.md Section 5.3).
+                      properties:
+                        status: { type: string, enum: [CREATED, FAILED] }
+                        shortCode: { type: string, description: "CREATED only" }
+                        shortUrl: { type: string, format: uri, description: "CREATED only" }
+                        longUrl: { type: string, format: uri, description: "CREATED only" }
+                        createdAt: { type: string, format: date-time, description: "CREATED only" }
+                        expiresAt: { type: string, format: date-time, description: "CREATED only" }
+                        code:
+                          type: string
+                          description: "FAILED only"
+                          enum: [INVALID_URL_SCHEME, URL_TOO_LONG, URL_MALFORMED,
+                                 INVALID_CUSTOM_CODE_SHAPE, RESERVED_CODE,
+                                 CUSTOM_CODE_TAKEN, CODE_SPACE_EXHAUSTED]
+                        message: { type: string, description: "FAILED only" }
+                  successCount: { type: integer, description: "count of results[] with status=CREATED" }
+                  failureCount: { type: integer, description: "count of results[] with status=FAILED; successCount + failureCount == items.length always" }
+        "400":
+          description: >
+            code=EMPTY_BATCH (items missing/null/[]) | BATCH_TOO_LARGE
+            (items.length > 100) | MALFORMED_REQUEST (unparseable JSON body,
+            existing catch-all reused unchanged) -- all whole-request, all checked
+            before any item is processed (feature-spec.md Section 4 ordering).
+        "429":
+          description: >
+            code=RATE_LIMITED -- new batch-scoped limiter (source IP only, 20
+            req/60s), distinct instance/key from the existing /{code} limiter.
+            Reuses the existing RATE_LIMITED token and ErrorResponse envelope
+            verbatim; Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining
+            headers follow the same convention as the redirect limiter.
+        "500":
+          description: "code=INTERNAL_ERROR -- unhandled exception, existing catch-all reused unchanged"

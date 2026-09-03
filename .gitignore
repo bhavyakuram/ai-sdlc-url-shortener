@@ -22,3 +22,11 @@ venv/
 \# IDE
 .idea/
 *.iml
+
+\# H2 file-mode database (service-java-spring/, jdbc:h2:file:./data/urlshortener --
+\# FR-5 durability requirement, risk-register.md R-1). The .mv.db/.trace.db files are
+\# a local runtime data store, not source -- analogous to target/ above, not a
+\# reproducibility artifact like .claude/output/ is.
+service-java-spring/data/
+*.mv.db
+*.trace.db

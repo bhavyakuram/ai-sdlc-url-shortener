@@ -6,26 +6,27 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 
 import java.time.Instant;
+import java.util.Objects;
 
 /**
- * A short link record. The uniqueness constraint on {@code shortCode}
- * is the concurrency-safety mechanism for AC-9 (see
- * step3/technical-design.md) — the database, not application code,
- * arbitrates collisions.
+ * A persisted short link. Maps 1:1 to the {@code short_link} table defined in
+ * {@code state-migration.md}.
+ *
+ * <p>Data layer: no HTTP/api-layer imports here, per {@code rules/architecture.md}
+ * Dependency Direction ({@code api -> service -> data}, never the reverse).
  */
 @Entity
-@Table(name = "short_link", uniqueConstraints = @UniqueConstraint(columnNames = "short_code"))
+@Table(name = "short_link")
 public class ShortLinkEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "short_code", nullable = false, length = 32)
-    private String shortCode;
+    @Column(name = "code", nullable = false, unique = true, length = 32)
+    private String code;
 
     @Column(name = "target_url", nullable = false, length = 2048)
     private String targetUrl;
@@ -36,27 +37,32 @@ public class ShortLinkEntity {
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
 
+    /** Required by JPA. */
     protected ShortLinkEntity() {
-        // JPA requires a no-arg constructor
     }
 
-    public ShortLinkEntity(String shortCode, String targetUrl, Instant createdAt, Instant expiresAt) {
-        this.shortCode = shortCode;
-        this.targetUrl = targetUrl;
-        this.createdAt = createdAt;
-        this.expiresAt = expiresAt;
+    public ShortLinkEntity(String code, String targetUrl, Instant createdAt, Instant expiresAt) {
+        this.code = Objects.requireNonNull(code, "code");
+        this.targetUrl = Objects.requireNonNull(targetUrl, "targetUrl");
+        this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
+        this.expiresAt = Objects.requireNonNull(expiresAt, "expiresAt");
+    }
+
+    public boolean isExpired(Instant now) {
+        return expiresAt.isBefore(now);
     }
 
     public Long getId() {
         return id;
     }
 
-    public String getShortCode() {
-        return shortCode;
+    public String getCode() {
+        return code;
     }
 
-    public void setShortCode(String shortCode) {
-        this.shortCode = shortCode;
+    /** Mutable for Candidate A's generated-code path (insert-then-derive-then-update). */
+    public void setCode(String code) {
+        this.code = Objects.requireNonNull(code, "code");
     }
 
     public String getTargetUrl() {
@@ -69,9 +75,5 @@ public class ShortLinkEntity {
 
     public Instant getExpiresAt() {
         return expiresAt;
-    }
-
-    public boolean isExpired(Instant now) {
-        return expiresAt.isBefore(now);
     }
 }

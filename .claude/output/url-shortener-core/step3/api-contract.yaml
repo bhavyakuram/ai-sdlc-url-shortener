@@ -1,67 +1,40 @@
+# CORRECTED post-STEP-4 (contract-delta amendment, rules/architecture.md
+# sanctioned exception #3): the conductor's original draft of this file
+# used different field/error-code names than the Gate-2-approved
+# step2/feature-spec.md. generator (STEP-4) correctly followed
+# feature-spec.md as authoritative and flagged the mismatch; this file
+# is now corrected to match what was actually built and tested, rather
+# than left stale. See _run-log.md STEP-4 entry.
 openapi: 3.1.0
-info:
-  title: URL Shortener API
-  version: 1.0.0
+info: { title: URL Shortener API, version: 1.0.0 }
 paths:
-  /links:
+  /api/v1/links:
     post:
-      summary: Create a short link
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [targetUrl]
+              required: [url]
               properties:
-                targetUrl: { type: string, format: uri }
-                alias: { type: string, pattern: "^[a-zA-Z0-9_-]{3,32}$" }
-                expiresInDays: { type: integer, minimum: 1 }
+                url: { type: string, format: uri, maxLength: 2048 }
+                customCode: { type: string, pattern: "^[a-zA-Z0-9]{3,32}$" }
       responses:
-        "201":
-          description: Created
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/LinkResponse" }
-        "400": { description: "Invalid targetUrl" }
-        "409": { description: "Alias already in use (code=ALIAS_TAKEN)" }
+        "201": { description: "Created — shortCode, shortUrl, longUrl, createdAt, expiresAt" }
+        "400": { description: "code=INVALID_URL_SCHEME | URL_TOO_LONG | URL_MALFORMED | INVALID_CUSTOM_CODE_SHAPE | RESERVED_CODE" }
+        "409": { description: "code=CUSTOM_CODE_TAKEN" }
+        "503": { description: "code=CODE_SPACE_EXHAUSTED (pathological, generated-code retry budget exhausted)" }
   /{code}:
     get:
-      summary: Redirect to the target URL and record a click
-      parameters:
-        - { name: code, in: path, required: true, schema: { type: string } }
+      parameters: [{ name: code, in: path, required: true, schema: { type: string } }]
       responses:
-        "302": { description: "Redirect to targetUrl" }
-        "404": { description: "Code never existed" }
-        "410": { description: "Code existed, now expired" }
-  /links/{code}/analytics:
+        "302": { description: "Redirect to longUrl; records a ClickEvent (country omitted if geo lookup fails soft)" }
+        "404": { description: "code=CODE_NOT_FOUND — used identically for both never-existed and expired (feature-spec.md Section 4)" }
+        "429": { description: "code=RATE_LIMITED; Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining headers" }
+  /api/v1/links/{code}/stats:
     get:
-      summary: Click analytics for a short link
-      parameters:
-        - { name: code, in: path, required: true, schema: { type: string } }
+      parameters: [{ name: code, in: path, required: true, schema: { type: string } }]
       responses:
-        "200":
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/AnalyticsResponse" }
-        "404": { description: "Code never existed" }
-components:
-  schemas:
-    LinkResponse:
-      type: object
-      properties:
-        code: { type: string }
-        targetUrl: { type: string, format: uri }
-        expiresAt: { type: string, format: date-time }
-    AnalyticsResponse:
-      type: object
-      properties:
-        code: { type: string }
-        clickCount: { type: integer }
-        events:
-          type: array
-          items:
-            type: object
-            properties:
-              timestamp: { type: string, format: date-time }
-              referrer: { type: string, nullable: true }
+        "200": { description: "shortCode, longUrl, createdAt, expiresAt, totalClicks, clicksByDay[], clicksByCountry[] — queryable even after expiry" }
+        "404": { description: "code=CODE_NOT_FOUND (only for never-existed; expired-but-valid-once still returns 200)" }

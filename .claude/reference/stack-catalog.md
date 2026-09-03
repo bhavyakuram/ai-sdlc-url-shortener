@@ -8,5 +8,5 @@
 Capabilities vocabulary in use: `api:rest`, `services:jvm`,
 `services:asgi`, `data:relational`, `build:maven`, `build:pip`,
 `test:junit`, `test:pytest`. Selecting a stack is a launch-time
-argument (`/run-sdlc <stack> ...`); it is never a compiled-in default,
+argument (`/sdlc-launcher <stack> ...`); it is never a compiled-in default,
 per the project's dynamic-language requirement.
